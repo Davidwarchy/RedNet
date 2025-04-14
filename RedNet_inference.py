@@ -3,6 +3,7 @@ import torch
 import imageio
 import skimage.transform
 import torchvision
+import numpy as np  # Added numpy import
 
 import torch.optim
 import RedNet_model
@@ -32,8 +33,15 @@ def inference():
     model.eval()
     model.to(device)
 
-    image = imageio.imread(args.rgb)
-    depth = imageio.imread(args.depth)
+    # Update to use imageio.v2 to avoid deprecation warnings
+    try:
+        import imageio.v2 as iio
+        image = iio.imread(args.rgb)
+        depth = iio.imread(args.depth)
+    except ImportError:
+        # Fall back to regular imageio if v2 is not available
+        image = imageio.imread(args.rgb)
+        depth = imageio.imread(args.depth)
 
     # Bi-linear
     image = skimage.transform.resize(image, (image_h, image_w), order=1,
@@ -59,8 +67,18 @@ def inference():
     pred = model(image, depth)
 
     output = utils.color_label(torch.max(pred, 1)[1] + 1)[0]
-
-    imageio.imsave(args.output, output.cpu().numpy().transpose((1, 2, 0)))
+    
+    # Fix: Convert output tensor to uint8 numpy array before saving
+    output_np = output.cpu().numpy().transpose((1, 2, 0))
+    output_np = (output_np * 255).astype(np.uint8)  # Scale to 0-255 and convert to uint8
+    
+    try:
+        # Try using imageio.v2 to avoid deprecation warnings
+        import imageio.v2 as iio
+        iio.imwrite(args.output, output_np)
+    except ImportError:
+        # Fall back to regular imageio
+        imageio.imsave(args.output, output_np)
 
 if __name__ == '__main__':
     inference()
