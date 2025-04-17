@@ -1,0 +1,5 @@
+.qodo
+*.pth
+test*.*
+x*.*
+__pycache__
