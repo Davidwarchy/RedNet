@@ -2,7 +2,7 @@ import torch
 from torch import nn
 import math
 import torch.utils.model_zoo as model_zoo
-from utils import utils
+from .utils import utils
 from torch.utils.checkpoint import checkpoint
 
 
